@@ -60,24 +60,24 @@ document.addEventListener('keyup', handleKeyUp);
 document.body.appendChild(app.view);
 
 loader
-  .add("sky", "images/bg2.jpg")
-  .add("images/alien_invasion.json")
+  .add("space", "images/bg2.jpg")
+  .add("images/character.json")
   .add("sound","images/bulletsound2.mp3")
   .on("progress", loadProgressHandler)
   .load(setup);
   
 function loadProgressHandler(loader, resource) {
-  console.log("loading: " + resource.url); 
-  console.log("progress: " + loader.progress + "%"); 
-  console.log("resource name: " + resource.name);
+  console.log("loading.. "); 
 }
 
-let Aliens, PauseContainer;
-let sky, rocket, alien, bullet; 
-let skyVelocity = 2, rocketMaxVelocity = 10, aliensVelocity=4 ;
-let numberOfAliens = 5, xAlienOffset = 800;
+let Defenders, PauseContainer;
+let space, shooter, defender, bullet; 
+let spaceVelocity = 2, shooterMaxVelocity = 10, defendersVelocity=4 ;
+let numberOfDefenders = 5, xDefenderOffset = 800;
 let healthMessage, scoreText;
-
+let scorebombIncrease=0,flag_level1=0;
+const level1 = PIXI.Texture.from('images/defender1.png');
+const level2 = PIXI.Texture.from('images/defender2.png');
 //for level change
 var rad = document.myForm.easy;
 var prev = null;
@@ -87,7 +87,7 @@ for (let i = 0; i < rad.length; i++) {
             prev = this;
         }
         console.log((this.value-'0'))
-        aliensVelocity=this.value-'0';
+        defendersVelocity=this.value-'0';
     });
 }
 
@@ -115,16 +115,16 @@ let GameOverTextStyle = new PIXI.TextStyle({
 
 function setup() {
 
-  sky1 = new Sprite(PIXI.loader.resources.sky.texture);
-  sky1.width = 800;
-  sky1.height = 600;
-  app.stage.addChild(sky1);
+  space1 = new Sprite(PIXI.loader.resources.space.texture);
+  space1.width = 800;
+  space1.height = 600;
+  app.stage.addChild(space1);
 
-  sky2 = new Sprite(PIXI.loader.resources.sky.texture);
-  sky2.width = 800;
-  sky2.height = 600;
-  sky2.position.set(800,0);
-  app.stage.addChild(sky2);
+  space2 = new Sprite(PIXI.loader.resources.space.texture);
+  space2.width = 800;
+  space2.height = 600;
+  space2.position.set(800,0);
+  app.stage.addChild(space2);
 
   renderBullet = () => {
     bullet = new PIXI.Graphics();
@@ -157,25 +157,27 @@ function setup() {
   Bullets = new PIXI.Container();
   app.stage.addChild(Bullets);
 
-  let characters = PIXI.loader.resources["images/alien_invasion.json"].textures;
+  let characters = PIXI.loader.resources["images/character.json"].textures;
 
-  Aliens = new PIXI.Container();
+  Defenders = new PIXI.Container();
 
-  for (let i = 0; i < numberOfAliens; i++) {
-    alien = new Sprite(characters["defender"]);
+  
 
-    let xPosition = randomInt(xAlienOffset, 2000);
+  for (let i = 0; i < numberOfDefenders; i++) {
+    defender = new Sprite(characters["defender"]);
 
-    let yPosition = randomInt(0, app.stage.height - alien.height);
+    let xPosition = randomInt(xDefenderOffset, 2000);
 
-    alien.id = `alien0${i}`;
-    alien.x = xPosition;
-    alien.y = yPosition;
+    let yPosition = randomInt(0, app.stage.height - defender.height);
 
-    Aliens.addChild(alien);
+    defender.id = `defender0${i}`;
+    defender.x = xPosition;
+    defender.y = yPosition;
+
+    Defenders.addChild(defender);
   }
 
-  app.stage.addChild(Aliens);
+  app.stage.addChild(Defenders);
 
   points = [];
 
@@ -186,21 +188,21 @@ function setup() {
     }
   }
 
-  rocket = new PIXI.mesh.Rope(characters["rocket"], points);
+  shooter = new PIXI.mesh.Rope(characters["shooter"], points);
 
-  app.stage.addChild(rocket);
-  rocket.width = characters["rocket"].width;
-  rocket.height = characters["rocket"].height;
+  app.stage.addChild(shooter);
+  shooter.width = characters["shooter"].width;
+  shooter.height = characters["shooter"].height;
 
-  rocket.pivot.y -= rocket.height / 2;
+  shooter.pivot.y -= shooter.height / 2;
   
-  rocket.position.set(10, 200);
-  rocket.vx = 4;
-  rocket.vy = 4;
-  rocket.health = 5;
-  rocket.score = 0;
+  shooter.position.set(10, 200);
+  shooter.vx = 4;
+  shooter.vy = 4;
+  shooter.health = 5;
+  shooter.score = 0;
 
-  rocket.hitArea = new PIXI.Ellipse(rocket.pivot.x, rocket.pivot.y, rocket.width, rocket.height);
+  shooter.hitArea = new PIXI.Ellipse(shooter.pivot.x, shooter.pivot.y, shooter.width, shooter.height);
 
   PauseContainer = new PIXI.Container();
   const background = new PIXI.Graphics();
@@ -234,11 +236,11 @@ function setup() {
   CircleButton.on('pointerdown', handleCircButtonPressed);
   app.stage.addChild(PauseContainer);
 
-  healthText = new PIXI.Text(`Health: ${rocket.health}`, textStyle);
+  healthText = new PIXI.Text(`Health: ${shooter.health}`, textStyle);
   app.stage.addChild(healthText);
   healthText.position.set(50, 10);
 
-  scoreText = new PIXI.Text(`Score: ${rocket.score}`, textStyle);
+  scoreText = new PIXI.Text(`Score: ${shooter.score}`, textStyle);
   app.stage.addChild(scoreText);
   scoreText.position.set(150, 10);
 
@@ -260,10 +262,10 @@ gameLoop = () => {
 function play() {
   handleKeyButtons();
 
-  sky1.x -= skyVelocity;
-  sky2.x -= skyVelocity;
-  if (sky1.x == -800) sky1.x = 800;
-  if (sky2.x == -800) sky2.x = 800;
+  space1.x -= spaceVelocity;
+  space2.x -= spaceVelocity;
+  if (space1.x == -800) space1.x = 800;
+  if (space2.x == -800) space2.x = 800;
 
   Bullets.children.forEach(Bullet => {
     Bullet.x += Bullet.velocity;
@@ -273,13 +275,15 @@ function play() {
     }
   });
 
-    Aliens.children.forEach((Allien, index) => {
-    Allien.x -= aliensVelocity + index/1.5;
-
-    if(rocket.x + rocket.width >= Allien.x && rocket.y + rocket.height >= Allien.y && 
-      rocket.x <= Allien.x + Allien.width && rocket.y <= Allien.y + Allien.height) {
-      rocket.health -= 1;
-      healthText.text = `Health: ${rocket.health}`;
+    Defenders.children.forEach((Allien, index) => {
+    Allien.x -= defendersVelocity + index/1.5;
+    if(Allien.x<800){
+      Allien.y += .5;
+    }
+    if(shooter.x + shooter.width >= Allien.x && shooter.y + shooter.height >= Allien.y && 
+      shooter.x <= Allien.x + Allien.width && shooter.y <= Allien.y + Allien.height) {
+      shooter.health -= 1;
+      healthText.text = `Health: ${shooter.health}`;
       Allien.visible = false;
       Allien.x = 810;
       Allien.y = randomInt(0, app.stage.height - Allien.height );
@@ -298,11 +302,34 @@ function play() {
     });
 
     if (Allien.alpha <= 0) {
-      rocket.score += 1;
-      scoreText.text = `Score: ${rocket.score}`;
+      shooter.score += 1;
+      scorebombIncrease+=1;
+      scoreText.text = `Score: ${shooter.score}`;
       Allien.visible = false;
       Allien.x = 810;
       Allien.y = randomInt(0, app.stage.height - Allien.height );
+      if(scorebombIncrease>=10&&shooter.score<50){
+        scorebombIncrease-=10;
+        bomb+=1;
+        const level1_sprite = new PIXI.Sprite(level1);
+        level1_sprite.width = 120;
+        level1_sprite.height = 120;
+        level1_sprite.x =  randomInt(xDefenderOffset, 2000);
+        level1_sprite.y = randomInt(0, app.stage.height - defender.height);
+        Defenders.addChild(level1_sprite);
+        Defenders.removeChild(Allien);
+      }
+      if(scorebombIncrease>=10&&shooter.score>50){
+        scorebombIncrease-=10;
+        bomb+=1;
+        const level2_sprite = new PIXI.Sprite(level2);
+        level2_sprite.width = 120;
+        level2_sprite.height = 90;
+        level2_sprite.x =  randomInt(xDefenderOffset, 2000);
+        level2_sprite.y = randomInt(0, app.stage.height - defender.height);
+        Defenders.addChild(level2_sprite);
+        Defenders.removeChild(Allien);
+      }
     }
 
     if (Allien.x <= -90) {
@@ -316,8 +343,8 @@ function play() {
     }
   });
 
-  if (rocket.health <= 0) {
-    rocket.health = 0; 
+  if (shooter.health <= 0) {
+    shooter.health = 0; 
     state = GameOver;
   }
 
@@ -367,8 +394,8 @@ function handleKeyDown(e) {
     if (e.keyCode == 32) {
       e.preventDefault();
       Bullets.addChild(renderBullet());
-      bullet.x = rocket.x + rocket.width;
-      bullet.y = rocket.y + 4*rocket.height/5;
+      bullet.x = shooter.x + shooter.width;
+      bullet.y = shooter.y + 4*shooter.height/5;
     } else if (e.keyCode == 80) {
       e.preventDefault();
       handleGamePause();
@@ -376,8 +403,8 @@ function handleKeyDown(e) {
       if(bomb>0){
         e.preventDefault();
         Bullets.addChild(renderBomb());
-        bullet.x = rocket.x + rocket.width;
-        bullet.y = rocket.y + rocket.height/2;
+        bullet.x = shooter.x + shooter.width;
+        bullet.y = shooter.y + shooter.height/2;
         bomb=bomb-1;
       }
     }
@@ -390,43 +417,43 @@ function handleKeyUp(event) {
 function handleKeyButtons() {
     if (currentlyPressedKeys[74]) {
         // J
-        if(rocket.vx >= 0.2) rocket.vx -= 0.1;
+        if(shooter.vx >= 0.2) shooter.vx -= 0.1;
     }
     if (currentlyPressedKeys[76]) {
         // L
-        if(rocket.vx <= rocketMaxVelocity) rocket.vx += 0.1;
+        if(shooter.vx <= shooterMaxVelocity) shooter.vx += 0.1;
     }
     if (currentlyPressedKeys[73]) {
         // I
-        if(rocket.vy <= rocketMaxVelocity) rocket.vy += 0.1;
+        if(shooter.vy <= shooterMaxVelocity) shooter.vy += 0.1;
     }
     if (currentlyPressedKeys[75]) {
         // K
-        if(rocket.vy >= 0.2) rocket.vy -= 0.1;
+        if(shooter.vy >= 0.2) shooter.vy -= 0.1;
     }
 
     if (currentlyPressedKeys[87]) {
         // "W"
-        rocket.y -= rocket.vy;
-        if(rocket.y <= 0) rocket.y = 0;
+        shooter.y -= shooter.vy;
+        if(shooter.y <= 0) shooter.y = 0;
     } 
 
     if (currentlyPressedKeys[83]) {
         // "S"
-        rocket.y += rocket.vy;
-        if(rocket.y >= 600-rocket.height) rocket.y = 600-rocket.height;
+        shooter.y += shooter.vy;
+        if(shooter.y >= 600-shooter.height) shooter.y = 600-shooter.height;
     } 
 
     if (currentlyPressedKeys[65]) {
         // "A"            
-        rocket.x -= rocket.vx;
-        if(rocket.x <= 0) rocket.x = 0;
+        shooter.x -= shooter.vx;
+        if(shooter.x <= 0) shooter.x = 0;
     } 
 
     if (currentlyPressedKeys[68]) {
         // "D"            
-        rocket.x += rocket.vx;
-        if(rocket.x >= 800-rocket.width) rocket.x = 800-rocket.width;
+        shooter.x += shooter.vx;
+        if(shooter.x >= 800-shooter.width) shooter.x = 800-shooter.width;
     }
 }
 
